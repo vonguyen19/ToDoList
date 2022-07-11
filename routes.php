@@ -1,6 +1,6 @@
 <?php
 $controllers = array(
-  'work' => ['index', 'add', 'store' , 'error'],
+  'work' => ['index', 'show', 'add', 'store', 'delete', 'update', 'error'],
 );
 
 if (!array_key_exists($controller, $controllers) || !in_array($action, $controllers[$controller])) {

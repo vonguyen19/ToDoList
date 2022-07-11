@@ -21,6 +21,44 @@
 </div>
 
 <script type="text/javascript">
+    var resources = [{
+            name: "Planing",
+            id: "Planing"
+        },
+        {
+            name: "Doing",
+            id: "Doing"
+        },
+        {
+            name: "Complete",
+            id: "Complete"
+        },
+    ];
+
+    var form = [{
+            name: "Name",
+            id: "workName"
+        },
+        {
+            name: "Starting Date",
+            id: "startDate",
+            dateFormat: "MMMM d, yyyy h:mm tt",
+            disabled: true
+        },
+        {
+            name: "Ending Date",
+            id: "endDate",
+            dateFormat: "MMMM d, yyyy h:mm tt",
+            disabled: true
+        },
+        {
+            name: "Status",
+            id: "status",
+            type: "select",
+            options: resources,
+        },
+    ];
+
     var nav = new DayPilot.Navigator("nav");
     nav.showMonths = 3;
     nav.skipMonths = 3;
@@ -48,49 +86,66 @@
                         var params = {
                             id: args.source.id(),
                         };
-                        DayPilot.Http.ajax({
-                            url: "calendar_delete.php",
-                            data: params,
-                            success: function(ajax) {
-                                dp.events.remove(params.id);
-                                dp.message("Deleted");
+
+                        $.ajax({
+                            type: "POST",
+                            url: "?controller=work&action=delete",
+                            data: modal.result,
+                            datatype: "application/json",
+                            success: function(response) {
+                                try {
+                                    response = JSON.parse(response);
+                                } catch (error) {}
+
+                                if (response['status'] === 'success') {
+                                    dp.events.remove(params.id);
+                                }
+
+                                dp.message(response.message);
                             }
                         });
                     }
                 },
                 {
-                    text: "-"
-                },
-                {
-                    text: "Blue",
-                    icon: "icon icon-blue",
-                    color: "#3d85c6",
+                    text: "Update",
                     onClick: function(args) {
-                        updateColor(args.source, args.item.color);
-                    }
-                },
-                {
-                    text: "Green",
-                    icon: "icon icon-green",
-                    color: "#6aa84f",
-                    onClick: function(args) {
-                        updateColor(args.source, args.item.color);
-                    }
-                },
-                {
-                    text: "Orange",
-                    icon: "icon icon-orange",
-                    color: "#e69138",
-                    onClick: function(args) {
-                        updateColor(args.source, args.item.color);
-                    }
-                },
-                {
-                    text: "Red",
-                    icon: "icon icon-red",
-                    color: "#cc4125",
-                    onClick: function(args) {
-                        updateColor(args.source, args.item.color);
+                        console.log(args);
+                        var data = {
+                            id : args.source.data.id,
+                            workName : args.source.data.text,
+                            startDate: args.source.data.start,
+                            endDate: args.source.data.end,
+                            status : args.source.data.status,
+                        };
+
+
+                        DayPilot.Modal.form(form, data).then(function(modal) {
+                            dp.clearSelection();
+
+                            if (modal.canceled) {
+                                return;
+                            }
+                            
+                            $.ajax({
+                                type: "POST",
+                                url: "?controller=work&action=update",
+                                data: modal.result,
+                                datatype: "application/json",
+                                success: function(response) {
+                                    try {
+                                        response = JSON.parse(response);
+                                    } catch (error) {}
+                                    if(response.status === 'success'){
+                                        console.log(modal.result);
+                                        var e = dp.events.find(modal.result.id);
+                                        e.text(modal.result.workName);
+                                        dp.events.update(e).notify();
+                                    }
+                                    dp.message(response.message);
+                                }
+                            });
+
+                        });
                     }
                 }
             ]
@@ -148,40 +203,11 @@
 
         // event creating
         dp.onTimeRangeSelected = function(args) {
-            var resources = [
-                {name: "Planing", id: "Planing"},
-                {name: "Doing", id: "Doing"},
-                {name: "Complete", id: "Complete"},
-            ];
-            var form = [{
-                    name: "Name",
-                    id: "workName"
-                },
-                {
-                    name: "Starting Date",
-                    id: "startDate",
-                    dateFormat: "MMMM d, yyyy h:mm tt",
-                    disabled: true
-                },
-                {
-                    name: "Ending Date",
-                    id: "endDate",
-                    dateFormat: "MMMM d, yyyy h:mm tt",
-                    disabled: true
-                },
-                {
-                    name: "Status",
-                    id: "status",
-                    type : "select",
-                    options: resources,
-                },
-            ];
-
             var data = {
                 startDate: args.start,
                 endDate: args.end,
             };
-            
+
 
             DayPilot.Modal.form(form, data).then(function(modal) {
                 dp.clearSelection();
@@ -194,12 +220,12 @@
                     type: "POST",
                     url: "?controller=work&action=store",
                     data: modal.result,
-                    datatype : "application/json",
-                    success: function (response) {
+                    datatype: "application/json",
+                    success: function(response) {
                         try {
                             response = JSON.parse(response);
                         } catch (error) {}
-                        
+
                         var dp = switcher.active.control;
                         dp.events.add({
                             start: data.startDate,
@@ -209,33 +235,32 @@
                         });
                     }
                 });
-                // console.log(modal.result);
-                // DayPilot.Http.ajax({
-                //     url: "?controller=work&action=store",
-                //     method : "POST",
-                //     data: modal.result,
-                //     headers : {
-                //         'Content-Type' : "application/x-www-form-urlencoded"
-                //     },
-                //     success: function(ajax) {
-                //         var dp = switcher.active.control;
-                //         dp.events.add({
-                //             start: data.start,
-                //             end: data.end,
-                //             id: ajax.data.id,
-                //             text: data.text
-                //         });
-                //     },
-                //     error : function(e){
-                //         console.log(e);
-                //     }
-                // });
 
             });
         };
 
         dp.onEventClick = function(args) {
-            DayPilot.Modal.alert(args.e.data.text);
+            var startDate = formatDate(args.e.data.start);
+            var endDate = formatDate(args.e.data.end);
+            var dataHtml = "<div class='contentWork'>" +
+                "<div class='form-control'>" +
+                "<label>Name: </label>" +
+                "<span>" + args.e.data.text + "</span>" +
+                "</div>" +
+                "<div class='form-control'>" +
+                "<label>Start Date: </label>" +
+                "<span>" + startDate + "</span>" +
+                "</div>" +
+                "<div class='form-control'>" +
+                "<label>End Date: </label>" +
+                "<span>" + endDate + "</span>" +
+                "</div>" +
+                "<div class='form-control'>" +
+                "<label>Status: </label>" +
+                "<span>" + args.e.data.status + "</span>" +
+                "</div>" +
+                "</div>";
+            DayPilot.Modal.alert(dataHtml);
         };
     }
 
@@ -257,7 +282,7 @@
         selectedClass: "selected-button",
         onChanged: function(args) {
             console.log("onChanged fired");
-            switcher.events.load("calendar_events.php");
+            switcher.events.load("?controller=work&action=show");
         }
     });
 
@@ -278,6 +303,20 @@
                 dp.message("Color updated");
             }
         });
+    }
+
+    function formatDate(date) {
+        var date = new Date(date);
+        dformat = [
+            date.getDate(),
+            date.getMonth() + 1,
+            date.getFullYear()
+        ].join('/') + ' ' + [
+            date.getHours(),
+            date.getMinutes(),
+            date.getSeconds()
+        ].join(':');
+        return dformat;
     }
 </script>
 
