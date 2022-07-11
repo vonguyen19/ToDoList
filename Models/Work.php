@@ -52,8 +52,7 @@ class Work
                     'text' => $row['name'],
                     'start' => $row['start_date'],
                     'end' => $row['end_date'],
-                    'status' => $row['status'],
-                    'backColor' => '#3d85c6',
+                    'status' => $row['status']
                 ];
             }
         } catch (Exception $e) {

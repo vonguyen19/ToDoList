@@ -21,6 +21,20 @@
 </div>
 
 <script type="text/javascript">
+    function validateTextRequired(args) {
+        var value = args.value || "";
+        if (value.trim().length === 0) {
+            args.valid = false;
+            args.message = "Text required";
+        } else if (value.toLowerCase().includes("a")) {
+            args.valid = false;
+            args.message = "Text must not contain 'a'.";
+        } else if (value.includes("2020")) {
+            args.valid = false;
+            args.message = "2020 not allowed.";
+        }
+    }
+
     var resources = [{
             name: "Planing",
             id: "Planing"
@@ -90,7 +104,7 @@
                         $.ajax({
                             type: "POST",
                             url: "?controller=work&action=delete",
-                            data: modal.result,
+                            data: params,
                             datatype: "application/json",
                             success: function(response) {
                                 try {
@@ -111,11 +125,11 @@
                     onClick: function(args) {
                         console.log(args);
                         var data = {
-                            id : args.source.data.id,
-                            workName : args.source.data.text,
+                            id: args.source.data.id,
+                            workName: args.source.data.text,
                             startDate: args.source.data.start,
                             endDate: args.source.data.end,
-                            status : args.source.data.status,
+                            status: args.source.data.status,
                         };
 
 
@@ -125,7 +139,7 @@
                             if (modal.canceled) {
                                 return;
                             }
-                            
+
                             $.ajax({
                                 type: "POST",
                                 url: "?controller=work&action=update",
@@ -135,7 +149,7 @@
                                     try {
                                         response = JSON.parse(response);
                                     } catch (error) {}
-                                    if(response.status === 'success'){
+                                    if (response.status === 'success') {
                                         console.log(modal.result);
                                         var e = dp.events.find(modal.result.id);
                                         e.text(modal.result.workName);
@@ -208,12 +222,21 @@
                 endDate: args.end,
             };
 
-
             DayPilot.Modal.form(form, data).then(function(modal) {
                 dp.clearSelection();
 
                 if (modal.canceled) {
                     return;
+                }
+
+                var data = modal.result;
+                var name = data.workName;
+                var status = data.status;
+                if(!name){
+                    alert('Field Name is required'); return;
+                }
+                if(!status){
+                    alert('Field Status is required'); return;
                 }
 
                 $.ajax({
@@ -318,6 +341,8 @@
         ].join(':');
         return dformat;
     }
+
+    
 </script>
 
 <!-- <div class="container">
